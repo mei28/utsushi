@@ -181,6 +181,7 @@ MVP (phases 1–3): ~1.5 days. Differentiating layer (phase 4): the actual reaso
 
 ## Decisions (resolved during implementation)
 
+- Drive API `client_id` distribution → user-provided `credentials.json`. Each user creates their own GCP project, enables the Drive API, downloads OAuth desktop credentials, and places the file at `~/.config/utsushi/credentials.json` (or sets `UTSUSHI_CREDENTIALS`). Rationale: shipping a default client_id would force the maintainer through Google's verification process at 100+ users, share a single API quota across the install base, and create a phishing risk if the secret leaked. Five minutes of GCP setup is the standard CLI-tool ergonomics (rclone, gcalcli) and avoids all three concerns.
 - Keynote export format → `Microsoft PowerPoint` only. PDF export is a separate concern; not in scope.
 - `normalize` write mode → copy by default (`<stem>.normalized.pptx`). `--in-place` overwrites the source. `--out` overrides the path. `--in-place` and `--out` are mutually exclusive (fail fast).
 - Slidev → not supported. The compatibility matrix above documents why.
@@ -191,6 +192,5 @@ MVP (phases 1–3): ~1.5 days. Differentiating layer (phase 4): the actual reaso
 
 ## Open questions (still unresolved)
 
-- Drive API `client_id` distribution: ship a default OAuth client (friendlier, but verification + quota burden falls on the maintainer), or require user-provided `credentials.json` (safer, but adds 5-minute setup to the first-run experience)? Lean toward user-provided. Decide before starting Phase 2.
 - Slide-master normalization: out of scope today. If users hit cases where theme-only swap is insufficient (master backgrounds, layout placeholder styling), re-open this — likely requires layout-ref rewriting rather than wholesale master replacement.
 - `diff` output ergonomics: c14n produces single-line XML, which is hard to read in unified-diff form. Add a `--summary` flag that lists changed parts without bodies?
