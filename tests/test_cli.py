@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
 from typer.testing import CliRunner
 
 from utsushi import __version__
+from utsushi.adapters import keynote
 from utsushi.cli import app
 
 runner = CliRunner()
@@ -20,3 +24,44 @@ def test_no_args_shows_help() -> None:
     result = runner.invoke(app, [])
     # no_args_is_help shows the help text; exit code can be 0 or 2 depending on Typer version
     assert "Usage" in result.stdout
+
+
+def test_convert_command_invokes_pipeline(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    src = tmp_path / "deck.key"
+    src.write_text("fake")
+
+    def fake_export(s: Path, d: Path) -> None:
+        d.write_bytes(b"PK\x03\x04")
+
+    monkeypatch.setattr(keynote, "export_to_pptx", fake_export)
+    result = runner.invoke(app, ["convert", str(src), "--to", "pptx"])
+    assert result.exit_code == 0, result.stdout
+    assert (tmp_path / "deck.pptx").exists()
+    assert "deck.pptx" in result.stdout
+
+
+def test_convert_with_explicit_out(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    src = tmp_path / "deck.key"
+    src.write_text("fake")
+    dst = tmp_path / "renamed.pptx"
+
+    monkeypatch.setattr(
+        keynote, "export_to_pptx", lambda s, d: d.write_bytes(b"PK\x03\x04")
+    )
+    result = runner.invoke(app, ["convert", str(src), "--to", "pptx", "--out", str(dst)])
+    assert result.exit_code == 0, result.stdout
+    assert dst.exists()
+
+
+def test_convert_to_slides_exits_nonzero(tmp_path: Path) -> None:
+    src = tmp_path / "deck.pptx"
+    src.write_bytes(b"PK\x03\x04")
+    result = runner.invoke(app, ["convert", str(src), "--to", "slides"])
+    # Expect exit code 2 (NotImplementedError branch). Error message goes
+    # to stderr; CliRunner separates streams in current click, so we
+    # validate via the contract (exit code) rather than message text.
+    assert result.exit_code == 2

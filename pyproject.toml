@@ -40,6 +40,10 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
+# B008: Typer's idiomatic API requires calling typer.Option / typer.Argument
+# inside parameter defaults; suppressing the rule project-wide is cleaner
+# than scattering noqa comments through every CLI command.
+ignore = ["B008"]
 
 [tool.mypy]
 python_version = "3.12"
