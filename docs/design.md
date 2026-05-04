@@ -2,6 +2,8 @@
 
 Carried over from a dotfiles-side discussion (2026-05-04). This document is the source of truth going forward; further discussion happens in this repo.
 
+Status as of 2026-05-04: Phases 0–5 implemented (PPTX <-> Keynote conversion, theme normalization, XML diff). Google Slides (Drive API) is deferred. Slidev support is out of scope.
+
 ## Goal
 
 Convert presentation decks among three formats with maximum fidelity, keeping the result editable in the target tool:
@@ -14,7 +16,7 @@ Out of scope for fidelity: fonts (acceptable to fix manually post-conversion), M
 
 In scope for fidelity: font sizes, paragraph widths, slide styles, master slides, color tables, placeholder roles.
 
-Optional ambition: Slidev integration. Treat as a *parallel* system, not a member of the round-trip group (see "Slidev" below).
+Slidev integration: out of scope. See "Slidev" below for the rationale.
 
 ## Constraints
 
@@ -83,7 +85,7 @@ The conversion itself is delegated. The reasons to write `utsushi`:
 
 ## Slidev
 
-Treated as a separate, parallel system. Not part of the round-trip group.
+Out of scope. The compatibility matrix below explains why round-tripping with Slidev was rejected.
 
 | Direction | Feasibility | Notes |
 |---|---|---|
@@ -92,7 +94,7 @@ Treated as a separate, parallel system. Not part of the round-trip group.
 | Keynote → Slidev | No direct path | Same as above via PPTX. |
 | Slides → Slidev | No direct path | Same. |
 
-Recommendation: if using Slidev, keep its Markdown as source of truth and emit PPTX raster for distribution only. Don't try to round-trip.
+If you use Slidev, treat its Markdown as the source of truth and emit PPTX raster for distribution only. utsushi will not bridge the two.
 
 ## Tech stack
 
@@ -146,6 +148,8 @@ Estimated 1–2 days after CLI is stable. Not part of MVP.
 
 ## Roadmap
 
+Original plan (preserved for reference). Drive integration was descoped during execution; see "Status" below.
+
 | Phase | Estimate | Deliverable |
 |---|---|---|
 | 1 | ½ day | `keynote.py` osascript wrapper + one-way conversion smoke test |
@@ -157,15 +161,36 @@ Estimated 1–2 days after CLI is stable. Not part of MVP.
 
 MVP (phases 1–3): ~1.5 days. Differentiating layer (phase 4): the actual reason to write this.
 
+### Status (2026-05-04)
+
+| Phase | Status | Notes |
+|---|---|---|
+| 0 (scaffold) | done | uv + Typer + pytest + just |
+| 1 (keynote) | done | osascript + flock + path validation |
+| 2 (drive) | deferred | Open question: client_id distribution. See "Open questions" |
+| 3 (pipeline + CLI) | done | `utsushi convert` ; `--to slides` raises NotImplementedError |
+| 4 (normalize) | done | theme1.xml swap; slide-master swap deferred (layout-ref invalidation) |
+| 5 (diff) | done | lxml c14n + difflib unified diff over XML/.rels parts |
+| 6 (GUI) | not started | optional |
+
 ## Naming
 
 - Project / command: `utsushi` (写し — to transcribe)
 - PyPI distribution: `utsushi-cli` (avoids confusion with archived EPSON `utsushi` scanner driver in PyPI search results, should it ever appear)
 - Tagline: "slide utsuslide for keynote / pptx / slides"
 
-## Open questions
+## Decisions (resolved during implementation)
 
-- Drive API client_id distribution: ship a default OAuth client, or require user-provided credentials? Default is friendlier; user-provided avoids quota sharing.
-- Keynote export format options: `Microsoft PowerPoint` only, or also offer `as PDF`?
-- Should `normalize` operate in place or always emit a copy? Lean toward copy by default with `--in-place` flag.
-- Slidev: include a `utsushi to-slidev` that does best-effort text extraction (acknowledging the result is not faithful), or refuse and document why?
+- Keynote export format → `Microsoft PowerPoint` only. PDF export is a separate concern; not in scope.
+- `normalize` write mode → copy by default (`<stem>.normalized.pptx`). `--in-place` overwrites the source. `--out` overrides the path. `--in-place` and `--out` are mutually exclusive (fail fast).
+- Slidev → not supported. The compatibility matrix above documents why.
+- Keynote concurrency → `fcntl.LOCK_EX` on `~/.cache/utsushi/keynote.lock`, taken per `run_script` invocation. Multiple processes serialize on the lock; same-process callers reuse it.
+- AppleScript path safety → reject paths containing `"`, `\`, `\n`, `\r` rather than escape. Escaping invites quoting bugs; failing fast surfaces the issue.
+- Theme normalization scope → swap `theme1.xml` only. Slide-master swap is deferred because wholesale master replacement orphans the target's layout references; the visible color/font normalization that drives the project's value is delivered by theme-only swap.
+- Diff scope → XML and `.rels` parts only. Binary media (images, fonts) is excluded; re-encoding always produces noise that doesn't speak to fidelity.
+
+## Open questions (still unresolved)
+
+- Drive API `client_id` distribution: ship a default OAuth client (friendlier, but verification + quota burden falls on the maintainer), or require user-provided `credentials.json` (safer, but adds 5-minute setup to the first-run experience)? Lean toward user-provided. Decide before starting Phase 2.
+- Slide-master normalization: out of scope today. If users hit cases where theme-only swap is insufficient (master backgrounds, layout placeholder styling), re-open this — likely requires layout-ref rewriting rather than wholesale master replacement.
+- `diff` output ergonomics: c14n produces single-line XML, which is hard to read in unified-diff form. Add a `--summary` flag that lists changed parts without bodies?
