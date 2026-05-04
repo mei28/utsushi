@@ -1,6 +1,6 @@
 [project]
 name = "utsushi"
-version = "0.0.0"
+version = "0.1.0"
 description = "Slide deck transcoder for Keynote / PowerPoint / Google Slides."
 readme = "README.md"
 requires-python = ">=3.12"

@@ -26,8 +26,18 @@ class TargetFormat(StrEnum):
     slides = "slides"
 
 
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(__version__)
+        raise typer.Exit()
+
+
 @app.callback()
-def _root() -> None:
+def _root(
+    version: bool = typer.Option(
+        False, "--version", callback=_version_callback, is_eager=True, help="Show version."
+    ),
+) -> None:
     """utsushi root command."""
 
 
@@ -77,6 +87,9 @@ def normalize_cmd(
 def diff(
     left: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
     right: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
+    summary: bool = typer.Option(
+        False, "--summary", help="List changed partnames without unified-diff bodies."
+    ),
 ) -> None:
     """Compare two PPTX decks at the XML-part level."""
     report = diff_mod.diff_decks(left, right)
@@ -90,7 +103,8 @@ def diff(
         rich.print(f"[green]+ only in right:[/green] {name}")
     for part in report.changed_parts:
         rich.print(f"[yellow]~ changed:[/yellow] {part.partname}")
-        rich.print(part.unified)
+        if not summary:
+            rich.print(part.unified)
 
     raise typer.Exit(code=1)
 

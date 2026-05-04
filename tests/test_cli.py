@@ -20,6 +20,12 @@ def test_version_command_prints_version() -> None:
     assert __version__ in result.stdout
 
 
+def test_version_flag_at_root_prints_version() -> None:
+    result = runner.invoke(app, ["--version"])
+    assert result.exit_code == 0
+    assert __version__ in result.stdout
+
+
 def test_no_args_shows_help() -> None:
     result = runner.invoke(app, [])
     # no_args_is_help shows the help text; exit code can be 0 or 2 depending on Typer version
@@ -86,6 +92,38 @@ def test_diff_command_identical_files_succeeds(tmp_path: Path) -> None:
     result = runner.invoke(app, ["diff", str(a), str(b)])
     assert result.exit_code == 0, result.stdout
     assert "identical" in result.stdout.lower()
+
+
+def test_diff_command_summary_omits_unified_bodies(tmp_path: Path) -> None:
+    """--summary should list changed partnames but not their unified diffs."""
+    import shutil
+
+    from pptx import Presentation as build_presentation
+
+    a = tmp_path / "a.pptx"
+    b = tmp_path / "b.pptx"
+    prs = build_presentation()
+    prs.slides.add_slide(prs.slide_layouts[0])
+    prs.save(str(a))
+    shutil.copyfile(a, b)
+    # Mutate b's theme so there's a real diff to summarize.
+    from utsushi.adapters import pptx as pptx_adapter
+
+    deck = pptx_adapter.open_deck(b)
+    theme = pptx_adapter.get_theme_xml(deck)
+    ns = "{http://schemas.openxmlformats.org/drawingml/2006/main}"
+    clr = theme.find(f".//{ns}clrScheme")
+    assert clr is not None
+    clr.set("name", "summary-sentinel")
+    pptx_adapter.set_theme_xml(deck, theme)
+    pptx_adapter.save_deck(deck, b)
+
+    result = runner.invoke(app, ["diff", str(a), str(b), "--summary"])
+    assert result.exit_code == 1
+    assert "theme1.xml" in result.stdout
+    # The unified diff header (`---`/`+++`) must NOT appear in summary mode.
+    assert "---" not in result.stdout
+    assert "+++" not in result.stdout
 
 
 def test_diff_command_returns_nonzero_on_difference(tmp_path: Path) -> None:
