@@ -39,16 +39,16 @@ def version() -> None:
 
 @app.command()
 def convert(
-    src: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
+    src: str = typer.Argument(..., help="Source deck path or Google Slides URL."),
     to: TargetFormat = typer.Option(..., "--to", help="Target format."),
     out: Path | None = typer.Option(None, "--out", help="Output path (default: replace ext)."),
+    folder: str | None = typer.Option(
+        None, "--folder", help="Drive folder id (only with --to slides)."
+    ),
 ) -> None:
     """Convert a deck to the target format."""
     try:
-        result = pipeline.convert(src, target=to.value, dst=out)
-    except NotImplementedError as exc:
-        typer.echo(f"error: {exc}", err=True)
-        raise typer.Exit(code=2) from exc
+        result = pipeline.convert(src, target=to.value, dst=out, folder_id=folder)
     except (ValueError, FileNotFoundError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from exc

@@ -51,14 +51,24 @@ def test_convert_with_explicit_out(monkeypatch: pytest.MonkeyPatch, tmp_path: Pa
     assert dst.exists()
 
 
-def test_convert_to_slides_exits_nonzero(tmp_path: Path) -> None:
+def test_convert_to_slides_invokes_drive_upload(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from utsushi.adapters import drive
+
     src = tmp_path / "deck.pptx"
     src.write_bytes(b"PK\x03\x04")
+    captured: dict[str, object] = {}
+
+    def fake_upload(p: Path, folder_id: str | None = None) -> str:
+        captured["path"] = p
+        captured["folder_id"] = folder_id
+        return "FILE_ID_X"
+
+    monkeypatch.setattr(drive, "upload_as_slides", fake_upload)
     result = runner.invoke(app, ["convert", str(src), "--to", "slides"])
-    # Expect exit code 2 (NotImplementedError branch). Error message goes
-    # to stderr; CliRunner separates streams in current click, so we
-    # validate via the contract (exit code) rather than message text.
-    assert result.exit_code == 2
+    assert result.exit_code == 0, result.stdout
+    assert "FILE_ID_X" in result.stdout
 
 
 def test_diff_command_identical_files_succeeds(tmp_path: Path) -> None:

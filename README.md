@@ -10,7 +10,7 @@ macOS-only. Uses Keynote.app and Google Drive API as conversion engines; adds ro
 
 ## Status
 
-PPTX <-> Keynote conversion, theme normalization, and XML diff are implemented. Google Slides (Drive API) is deferred. See `docs/design.md` for the design and `.tmp/plan.md` for the current implementation plan.
+PPTX <-> Keynote, Slides <-> PPTX/Keynote, theme normalization, and XML diff are implemented. See `docs/design.md` for the design.
 
 ## Development
 
@@ -27,20 +27,25 @@ just run --help  # invoke the CLI
 
 ## Commands
 
-Implemented:
-
 ```bash
-utsushi convert deck.key --to pptx              # .key <-> .pptx
-utsushi convert deck.pptx --to key
-utsushi normalize deck.pptx --theme tpl.pptx    # copy template's theme1.xml
-utsushi diff before.pptx after.pptx             # XML-part level round-trip QA
+utsushi convert deck.key --to pptx                                # .key -> .pptx
+utsushi convert deck.pptx --to key                                # .pptx -> .key
+utsushi convert deck.pptx --to slides                             # upload to Drive
+utsushi convert deck.pptx --to slides --folder FOLDER_ID          # to a specific folder
+utsushi convert https://docs.google.com/presentation/d/XXX --to pptx --out deck.pptx
+utsushi normalize deck.pptx --theme tpl.pptx                      # copy template's theme1.xml
+utsushi diff before.pptx after.pptx                               # XML-part level QA
 utsushi version
 ```
 
-Deferred (Drive API not yet wired):
+## Google Slides setup
 
-```bash
-utsushi convert deck.pptx --to slides --folder "Work/Decks"
-utsushi convert https://docs.google.com/presentation/d/XXX --to keynote
-utsushi sync ./decks --to drive --folder "Decks"
-```
+Drive integration uses your own Google Cloud OAuth client. Five-minute setup:
+
+1. Open the Google Cloud Console and create a new project (or pick an existing one).
+2. Enable the Google Drive API for that project (`APIs & Services > Library`).
+3. Configure the OAuth consent screen as `External` with your own Google account as a test user.
+4. Under `APIs & Services > Credentials`, create an `OAuth client ID` of type `Desktop app`.
+5. Download the JSON and save it to `~/.config/utsushi/credentials.json` (or set `UTSUSHI_CREDENTIALS` to its path).
+
+The first `utsushi convert ... --to slides` opens a browser for you to authorize the desktop client. The resulting OAuth token is cached in your macOS Keychain via `keyring`; it refreshes automatically.

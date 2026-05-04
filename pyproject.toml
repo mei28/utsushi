@@ -10,6 +10,9 @@ dependencies = [
     "typer>=0.12",
     "rich>=13.7",
     "python-pptx>=1.0",
+    "google-api-python-client>=2.150",
+    "google-auth-oauthlib>=1.2",
+    "keyring>=25",
 ]
 
 [project.scripts]
@@ -49,3 +52,15 @@ ignore = ["B008"]
 python_version = "3.12"
 strict = true
 files = ["src", "tests"]
+
+# Google client libraries do not ship py.typed markers. Allow untyped
+# calls inside the drive adapter so mypy strict can stay on for the
+# rest of the project.
+[[tool.mypy.overrides]]
+module = ["googleapiclient.*", "google_auth_oauthlib.*", "google.*", "keyring.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["utsushi.adapters.drive"]
+disallow_untyped_calls = false
+warn_return_any = false
