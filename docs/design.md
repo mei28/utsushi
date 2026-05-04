@@ -189,8 +189,8 @@ MVP (phases 1–3): ~1.5 days. Differentiating layer (phase 4): the actual reaso
 - AppleScript path safety → reject paths containing `"`, `\`, `\n`, `\r` rather than escape. Escaping invites quoting bugs; failing fast surfaces the issue.
 - Theme normalization scope → swap `theme1.xml` only. Slide-master swap is deferred because wholesale master replacement orphans the target's layout references; the visible color/font normalization that drives the project's value is delivered by theme-only swap.
 - Diff scope → XML and `.rels` parts only. Binary media (images, fonts) is excluded; re-encoding always produces noise that doesn't speak to fidelity.
+- Diff output ergonomics → `utsushi diff --summary` lists changed partnames without unified-diff bodies. The default (full unified diff over c14n single-line XML) stays available for surgical investigation but is unreadable when many parts changed (e.g., 30+ notesSlide files after a Keynote round-trip).
 
 ## Open questions (still unresolved)
 
 - Slide-master normalization: out of scope today. If users hit cases where theme-only swap is insufficient (master backgrounds, layout placeholder styling), re-open this — likely requires layout-ref rewriting rather than wholesale master replacement.
-- `diff` output ergonomics: c14n produces single-line XML, which is hard to read in unified-diff form. Add a `--summary` flag that lists changed parts without bodies?
