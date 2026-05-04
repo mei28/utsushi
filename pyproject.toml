@@ -1,0 +1,45 @@
+[project]
+name = "utsushi"
+version = "0.0.0"
+description = "Slide deck transcoder for Keynote / PowerPoint / Google Slides."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "mei", email = "mei28aquarius@gmail.com" }]
+dependencies = [
+    "typer>=0.12",
+    "rich>=13.7",
+]
+
+[project.scripts]
+utsushi = "utsushi.cli:app"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/utsushi"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.7",
+    "mypy>=1.13",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]

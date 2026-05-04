@@ -10,7 +10,20 @@ macOS-only. Uses Keynote.app and Google Drive API as conversion engines; adds ro
 
 ## Status
 
-Design phase. See `docs/design.md`.
+Phase 0: scaffolding. See `docs/design.md` for the design and `.tmp/plan.md` for the current implementation plan.
+
+## Development
+
+Requires `uv` and `just`.
+
+```bash
+just install     # uv sync — create .venv and install deps
+just test        # pytest
+just lint        # ruff check
+just typecheck   # mypy --strict
+just check       # lint + typecheck + test
+just run --help  # invoke the CLI
+```
 
 ## Planned commands
 
