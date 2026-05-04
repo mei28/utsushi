@@ -49,9 +49,7 @@ def test_apply_theme_default_output_is_normalized_suffix(tmp_path: Path) -> None
     out = normalize.apply_theme(target, template)
     assert out == target.with_name("deck.normalized.pptx")
     # Source should be untouched.
-    src_clr = pptx_adapter.get_theme_xml(pptx_adapter.open_deck(target)).find(
-        f".//{_NS}clrScheme"
-    )
+    src_clr = pptx_adapter.get_theme_xml(pptx_adapter.open_deck(target)).find(f".//{_NS}clrScheme")
     assert src_clr is not None
     assert src_clr.get("name") == "deck-original"
 
@@ -64,9 +62,7 @@ def test_apply_theme_in_place_overwrites_source(tmp_path: Path) -> None:
 
     out = normalize.apply_theme(target, template, in_place=True)
     assert out == target
-    clr = pptx_adapter.get_theme_xml(pptx_adapter.open_deck(target)).find(
-        f".//{_NS}clrScheme"
-    )
+    clr = pptx_adapter.get_theme_xml(pptx_adapter.open_deck(target)).find(f".//{_NS}clrScheme")
     assert clr is not None
     assert clr.get("name") == "corp"
 

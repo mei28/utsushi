@@ -75,9 +75,7 @@ def test_run_script_raises_on_nonzero_exit(monkeypatch: pytest.MonkeyPatch) -> N
         keynote.run_script("noop")
 
 
-def test_export_to_pptx_creates_output(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_export_to_pptx_creates_output(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     src = tmp_path / "in.key"
     dst = tmp_path / "out.pptx"
     src.write_text("fake key body")
@@ -109,9 +107,7 @@ def test_export_to_pptx_fails_if_source_missing(tmp_path: Path) -> None:
         keynote.export_to_pptx(src, dst)
 
 
-def test_import_from_pptx_creates_output(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_import_from_pptx_creates_output(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     src = tmp_path / "in.pptx"
     dst = tmp_path / "out.key"
     src.write_bytes(b"PK\x03\x04fake")

@@ -26,9 +26,7 @@ def test_no_args_shows_help() -> None:
     assert "Usage" in result.stdout
 
 
-def test_convert_command_invokes_pipeline(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_convert_command_invokes_pipeline(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     src = tmp_path / "deck.key"
     src.write_text("fake")
 
@@ -42,16 +40,12 @@ def test_convert_command_invokes_pipeline(
     assert "deck.pptx" in result.stdout
 
 
-def test_convert_with_explicit_out(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_convert_with_explicit_out(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     src = tmp_path / "deck.key"
     src.write_text("fake")
     dst = tmp_path / "renamed.pptx"
 
-    monkeypatch.setattr(
-        keynote, "export_to_pptx", lambda s, d: d.write_bytes(b"PK\x03\x04")
-    )
+    monkeypatch.setattr(keynote, "export_to_pptx", lambda s, d: d.write_bytes(b"PK\x03\x04"))
     result = runner.invoke(app, ["convert", str(src), "--to", "pptx", "--out", str(dst)])
     assert result.exit_code == 0, result.stdout
     assert dst.exists()
@@ -65,6 +59,39 @@ def test_convert_to_slides_exits_nonzero(tmp_path: Path) -> None:
     # to stderr; CliRunner separates streams in current click, so we
     # validate via the contract (exit code) rather than message text.
     assert result.exit_code == 2
+
+
+def test_diff_command_identical_files_succeeds(tmp_path: Path) -> None:
+    import shutil
+
+    from pptx import Presentation as build_presentation
+
+    a = tmp_path / "a.pptx"
+    b = tmp_path / "b.pptx"
+    prs = build_presentation()
+    prs.slides.add_slide(prs.slide_layouts[0])
+    prs.save(str(a))
+    shutil.copyfile(a, b)
+
+    result = runner.invoke(app, ["diff", str(a), str(b)])
+    assert result.exit_code == 0, result.stdout
+    assert "identical" in result.stdout.lower()
+
+
+def test_diff_command_returns_nonzero_on_difference(tmp_path: Path) -> None:
+    from pptx import Presentation as build_presentation
+
+    a = tmp_path / "a.pptx"
+    b = tmp_path / "b.pptx"
+    prs = build_presentation()
+    prs.slides.add_slide(prs.slide_layouts[0])
+    prs.save(str(a))
+    prs2 = build_presentation()
+    prs2.slides.add_slide(prs2.slide_layouts[1])  # different layout
+    prs2.save(str(b))
+
+    result = runner.invoke(app, ["diff", str(a), str(b)])
+    assert result.exit_code == 1
 
 
 def test_normalize_command_invokes_apply_theme(

@@ -5,9 +5,11 @@ from __future__ import annotations
 from enum import StrEnum
 from pathlib import Path
 
+import rich
 import typer
 
 from utsushi import __version__, normalize, pipeline
+from utsushi import diff as diff_mod
 
 app = typer.Typer(
     name="utsushi",
@@ -69,6 +71,28 @@ def normalize_cmd(
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     typer.echo(str(result))
+
+
+@app.command()
+def diff(
+    left: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
+    right: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
+) -> None:
+    """Compare two PPTX decks at the XML-part level."""
+    report = diff_mod.diff_decks(left, right)
+    if report.is_empty():
+        rich.print("[green]decks are identical at the XML level[/green]")
+        return
+
+    for name in report.only_in_left:
+        rich.print(f"[red]- only in left:[/red]  {name}")
+    for name in report.only_in_right:
+        rich.print(f"[green]+ only in right:[/green] {name}")
+    for part in report.changed_parts:
+        rich.print(f"[yellow]~ changed:[/yellow] {part.partname}")
+        rich.print(part.unified)
+
+    raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

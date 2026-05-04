@@ -46,9 +46,7 @@ def test_convert_routes_pptx_to_key_via_keynote_import(
     assert out.exists()
 
 
-def test_convert_honors_explicit_dst(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_convert_honors_explicit_dst(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     src = tmp_path / "deck.key"
     src.write_text("fake")
     dst = tmp_path / "elsewhere" / "renamed.pptx"
