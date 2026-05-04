@@ -7,7 +7,7 @@ from pathlib import Path
 
 import typer
 
-from utsushi import __version__, pipeline
+from utsushi import __version__, normalize, pipeline
 
 app = typer.Typer(
     name="utsushi",
@@ -47,6 +47,24 @@ def convert(
     except NotImplementedError as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=2) from exc
+    except (ValueError, FileNotFoundError) as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    typer.echo(str(result))
+
+
+@app.command(name="normalize")
+def normalize_cmd(
+    target: Path = typer.Argument(..., exists=True, dir_okay=False, readable=True),
+    theme: Path = typer.Option(
+        ..., "--theme", exists=True, dir_okay=False, readable=True, help="Template .pptx."
+    ),
+    out: Path | None = typer.Option(None, "--out", help="Output path."),
+    in_place: bool = typer.Option(False, "--in-place", help="Overwrite the target deck."),
+) -> None:
+    """Overwrite a deck's theme with a corporate template's theme."""
+    try:
+        result = normalize.apply_theme(target, theme, out=out, in_place=in_place)
     except (ValueError, FileNotFoundError) as exc:
         typer.echo(f"error: {exc}", err=True)
         raise typer.Exit(code=1) from exc

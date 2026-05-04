@@ -65,3 +65,29 @@ def test_convert_to_slides_exits_nonzero(tmp_path: Path) -> None:
     # to stderr; CliRunner separates streams in current click, so we
     # validate via the contract (exit code) rather than message text.
     assert result.exit_code == 2
+
+
+def test_normalize_command_invokes_apply_theme(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from utsushi import normalize
+
+    target = tmp_path / "deck.pptx"
+    template = tmp_path / "tpl.pptx"
+    target.write_bytes(b"PK\x03\x04")
+    template.write_bytes(b"PK\x03\x04")
+    captured: dict[str, object] = {}
+
+    def fake_apply(t: Path, tpl: Path, out: Path | None = None, in_place: bool = False) -> Path:
+        captured["target"] = t
+        captured["template"] = tpl
+        captured["out"] = out
+        captured["in_place"] = in_place
+        return out or t.with_name(f"{t.stem}.normalized{t.suffix}")
+
+    monkeypatch.setattr(normalize, "apply_theme", fake_apply)
+    result = runner.invoke(app, ["normalize", str(target), "--theme", str(template)])
+    assert result.exit_code == 0, result.stdout
+    assert captured["target"] == target
+    assert captured["template"] == template
+    assert captured["in_place"] is False
