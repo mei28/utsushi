@@ -9,6 +9,7 @@ authors = [{ name = "mei", email = "mei28aquarius@gmail.com" }]
 dependencies = [
     "typer>=0.12",
     "rich>=13.7",
+    "python-pptx>=1.0",
 ]
 
 [project.scripts]
@@ -26,6 +27,7 @@ dev = [
     "pytest>=8.3",
     "ruff>=0.7",
     "mypy>=1.13",
+    "lxml-stubs>=0.5",
 ]
 
 [tool.pytest.ini_options]
